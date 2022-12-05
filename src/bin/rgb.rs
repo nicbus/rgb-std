@@ -387,12 +387,12 @@ fn main() -> Result<(), Error> {
                 let psbt_bytes = fs::read(&psbt_in)?;
                 let mut psbt = Psbt::deserialize(&psbt_bytes)?;
 
-                let count = psbt.rgb_bundle_to_lnpbp4()?;
                 psbt.outputs
                     .last_mut()
                     .expect("PSBT should have outputs")
                     .set_tapret_dfs_path(&DfsPath::from_str("1")?)
                     .expect("given output should be valid");
+                let count = psbt.rgb_bundle_to_lnpbp4()?;
                 println!("Total {} bundles converted", count);
 
                 let psbt_bytes = psbt.serialize();
