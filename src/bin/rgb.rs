@@ -24,6 +24,7 @@ use std::str::FromStr;
 use amplify::hex::{FromHex, ToHex};
 use bitcoin::psbt::serialize::{Deserialize, Serialize};
 use bitcoin::OutPoint;
+use bitcoin_scripts::taproot::DfsPath;
 use bp::seals::txout::CloseMethod;
 use clap::Parser;
 use commit_verify::ConsensusCommit;
@@ -387,6 +388,11 @@ fn main() -> Result<(), Error> {
                 let mut psbt = Psbt::deserialize(&psbt_bytes)?;
 
                 let count = psbt.rgb_bundle_to_lnpbp4()?;
+                psbt.outputs
+                    .last_mut()
+                    .expect("PSBT should have outputs")
+                    .set_tapret_dfs_path(&DfsPath::from_str("1")?)
+                    .expect("given output should be valid");
                 println!("Total {} bundles converted", count);
 
                 let psbt_bytes = psbt.serialize();
