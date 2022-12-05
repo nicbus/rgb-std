@@ -194,6 +194,10 @@ pub enum PsbtCommand {
         /// Output file to save the PSBT updated with state transition(s)
         /// information. If not given, the source PSBT file is overwritten.
         psbt_out: Option<PathBuf>,
+
+        /// Method for seal closing ('tapret1st' or 'opret1st')
+        #[clap(short, long, default_value = "tapret1st")]
+        method: CloseMethod,
     },
 
     /// Analyze PSBT file and print out all RGB-related information from it
@@ -383,16 +387,30 @@ fn main() -> Result<(), Error> {
             }
         },
         Command::Psbt { subcommand } => match subcommand {
-            PsbtCommand::Bundle { psbt_in, psbt_out } => {
+            PsbtCommand::Bundle {
+                psbt_in,
+                psbt_out,
+                method,
+            } => {
                 let psbt_bytes = fs::read(&psbt_in)?;
                 let mut psbt = Psbt::deserialize(&psbt_bytes)?;
 
-                psbt.outputs
-                    .last_mut()
-                    .expect("PSBT should have outputs")
-                    .set_tapret_dfs_path(&DfsPath::from_str("1")?)
-                    .expect("given output should be valid");
+                if method == CloseMethod::TapretFirst {
+                    psbt.outputs
+                        .last_mut()
+                        .expect("PSBT should have outputs")
+                        .set_tapret_dfs_path(&DfsPath::from_str("1")?)
+                        .expect("given output should be valid");
+                }
                 let count = psbt.rgb_bundle_to_lnpbp4()?;
+                if method == CloseMethod::OpretFirst {
+                    psbt.outputs
+                        .last_mut()
+                        .expect("PSBT should have outputs")
+                        .set_opret_host()
+                        .expect("given output should be valid");
+                }
+
                 println!("Total {} bundles converted", count);
 
                 let psbt_bytes = psbt.serialize();
