@@ -396,19 +396,21 @@ fn main() -> Result<(), Error> {
                 let mut psbt = Psbt::deserialize(&psbt_bytes)?;
 
                 if method == CloseMethod::TapretFirst {
-                    psbt.outputs
-                        .last_mut()
-                        .expect("PSBT should have outputs")
-                        .set_tapret_dfs_path(&DfsPath::from_str("1")?)
-                        .expect("given output should be valid");
+                    let output = psbt.outputs.last_mut().expect("PSBT should have outputs");
+                    if output.tapret_dfs_path().is_none() {
+                        output
+                            .set_tapret_dfs_path(&DfsPath::from_str("1")?)
+                            .expect("given output should be valid");
+                    }
                 }
                 let count = psbt.rgb_bundle_to_lnpbp4()?;
                 if method == CloseMethod::OpretFirst {
-                    psbt.outputs
-                        .last_mut()
-                        .expect("PSBT should have outputs")
-                        .set_opret_host()
-                        .expect("given output should be valid");
+                    let output = psbt.outputs.last_mut().expect("PSBT should have outputs");
+                    if !output.is_opret_host() {
+                        output
+                            .set_opret_host()
+                            .expect("given output should be valid");
+                    }
                 }
 
                 println!("Total {} bundles converted", count);
