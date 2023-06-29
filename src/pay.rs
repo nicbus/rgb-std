@@ -32,6 +32,7 @@ use rgb::{AssignmentType, ContractId, GraphSeal, Operation, Opout};
 use rgbstd::containers::{Bindle, BuilderSeal, Transfer};
 use rgbstd::interface::{BuilderError, ContractSuppl, TypedState, VelocityHint};
 use rgbstd::persistence::{ConsignerError, Inventory, InventoryError, Stash};
+use strict_encoding::FieldName;
 
 use crate::invoice::Beneficiary;
 use crate::psbt::{DbcPsbtError, PsbtDbc, RgbExt, RgbInExt, RgbPsbtError};
@@ -182,8 +183,13 @@ pub trait InventoryWallet: Inventory {
             .as_ref()
             .or_else(|| main_builder.default_assignment().ok())
             .ok_or(BuilderError::NoDefaultAssignment)?;
+        let assignment_name = if assignment_name == &FieldName::from("beneficiary") {
+            FieldName::from("assetOwner")
+        } else {
+            assignment_name.clone()
+        };
         let assignment_id = main_builder
-            .assignments_type(assignment_name)
+            .assignments_type(&assignment_name)
             .ok_or(BuilderError::InvalidStateField(assignment_name.clone()))?;
         // TODO: select supplement basing on the signer trust level
         let suppl = self
